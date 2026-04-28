@@ -284,3 +284,60 @@ input[type="range"] {
     accent-color: var(--accent);
     cursor: pointer;
 }
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        overflow-y: auto;
+        height: auto;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 1.5rem;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+        position: static;
+    }
+
+    .scroll-area {
+        overflow-y: visible;
+    }
+
+    .main-content {
+        padding: 1rem;
+        height: 70vh; /* Give more height to the workspace on mobile */
+    }
+
+    .canvas-container {
+        border-radius: 20px;
+    }
+
+    #user-photo-display {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 12px;
+    }
+
+    .item-grid {
+        grid-template-columns: repeat(4, 1fr); /* 4 items in a row on mobile */
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+    }
+
+    .item-card {
+        min-width: 70px;
+    }
+
+    .upload-group {
+        flex-direction: row; /* Album and Camera buttons side by side */
+    }
+
+    .btn-upload {
+        padding: 0.8rem;
+        font-size: 0.8rem;
+    }
+}
