@@ -127,13 +127,13 @@
     <main class="main-content">
         <!-- Canvas Area -->
         <div class="canvas-container" id="canvas-container">
-            <!-- Original Photo & Result Photo -->
-            <img id="user-photo-display" style="display: none; width: 100%; height: 100%; object-fit: contain; z-index: 1;">
+            <!-- User Photo Display (Z-index 10 to be on top) -->
+            <img id="user-photo-display" style="display: none; width: 100%; height: 100%; object-fit: contain; z-index: 10; position: relative;">
             
-            <!-- Empty Msg -->
-            <div class="empty-state" id="empty-msg">
-                <i data-lucide="camera" size="40" style="opacity: 0.2;"></i>
-                <p style="font-weight: 500;">Upload your photo to start</p>
+            <!-- Empty Msg (Z-index 1) -->
+            <div class="empty-state" id="empty-msg" style="position: absolute; z-index: 1; text-align: center;">
+                <i data-lucide="camera" size="48" style="opacity: 0.2; margin-bottom: 1rem;"></i>
+                <p style="font-weight: 500; color: var(--text-secondary);">Upload your photo to start</p>
             </div>
         </div>
     </main>

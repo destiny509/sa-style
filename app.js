@@ -51,15 +51,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 1. Human Photo Upload
-    bgUpload.addEventListener('change', async (e) => {
+    bgUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             humanData = file;
-            const base64 = await toBase64(file);
-            userPhotoDisplay.src = base64;
+            const url = URL.createObjectURL(file);
+            userPhotoDisplay.src = url;
             userPhotoDisplay.style.display = 'block';
             emptyMsg.style.display = 'none';
             showToast("인물 사진이 등록되었습니다.");
+            
+            // Fallback for some mobile browsers
+            setTimeout(async () => {
+                if (!userPhotoDisplay.complete || userPhotoDisplay.naturalWidth === 0) {
+                    const base64 = await toBase64(file);
+                    userPhotoDisplay.src = base64;
+                }
+            }, 500);
         }
     });
 
@@ -119,10 +127,17 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.toBlob(async (blob) => {
             if (currentCameraTarget === 'human') {
                 humanData = blob;
-                userPhotoDisplay.src = await toBase64(blob);
+                const url = URL.createObjectURL(blob);
+                userPhotoDisplay.src = url;
                 userPhotoDisplay.style.display = 'block';
                 emptyMsg.style.display = 'none';
                 showToast("사진이 촬영되었습니다.");
+                
+                setTimeout(async () => {
+                    if (!userPhotoDisplay.complete || userPhotoDisplay.naturalWidth === 0) {
+                        userPhotoDisplay.src = await toBase64(blob);
+                    }
+                }, 500);
             } else {
                 addGarmentToGrid(blob, currentCameraTarget);
             }
