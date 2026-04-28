@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraVideo = document.getElementById('camera-video');
     const cameraCaptureBtn = document.getElementById('camera-capture-btn');
     const cameraCloseBtn = document.getElementById('camera-close-btn');
+    const cameraFlipBtn = document.getElementById('camera-flip-btn');
 
     // 1. Human Photo Upload (Album)
     bgUpload.addEventListener('change', (e) => {
@@ -41,25 +42,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 1-1. Camera Functionality (General)
+    // 1-1. Camera Functionality (Enhanced)
     let stream = null;
-    let currentCameraTarget = 'human'; // 'human', 'top', or 'bottom'
+    let currentCameraTarget = 'human'; 
+    let currentFacingMode = 'user'; // 'user' (front) or 'environment' (back)
 
     const openCamera = async (target) => {
         currentCameraTarget = target;
+        // Default to front for human, back for garments
+        currentFacingMode = target === 'human' ? 'user' : 'environment';
+        await startStream();
+        cameraModal.style.display = 'flex';
+    };
+
+    const startStream = async () => {
+        if (stream) stream.getTracks().forEach(track => track.stop());
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: target === 'human' ? 'user' : 'environment' } });
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
+            });
             cameraVideo.srcObject = stream;
-            cameraModal.style.display = 'flex';
+            // Mirror only for front camera
+            cameraVideo.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
         } catch (err) {
-            alert('카메라에 접근할 수 없습니다: ' + err.message);
+            alert('카메라 시작 실패: ' + err.message);
         }
     };
 
+    cameraFlipBtn.addEventListener('click', async () => {
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        await startStream();
+    });
+
     cameraOpenBtn.addEventListener('click', () => openCamera('human'));
     
+    // Explicitly select all triggers including those in Step 2 & 3
     document.querySelectorAll('.camera-trigger').forEach(btn => {
-        btn.addEventListener('click', () => openCamera(btn.dataset.target));
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openCamera(btn.dataset.target);
+        });
     });
 
     const closeCamera = () => {
@@ -74,6 +96,12 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = cameraVideo.videoWidth;
         canvas.height = cameraVideo.videoHeight;
         const ctx = canvas.getContext('2d');
+        
+        // Mirror the captured image if using front camera
+        if (currentFacingMode === 'user') {
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+        }
         ctx.drawImage(cameraVideo, 0, 0);
         
         canvas.toBlob((blob) => {
@@ -86,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectGarment(blob, currentCameraTarget);
             }
             closeCamera();
-        }, 'image/jpeg');
+        }, 'image/jpeg', 0.9);
     });
 
     // 2. Garment Selection Handlers
