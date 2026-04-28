@@ -23,14 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let topData = null; 
     let bottomData = null;
 
-    // Camera UI Elements
-    const cameraOpenBtn = document.getElementById('camera-open-btn');
-    const cameraModal = document.getElementById('camera-modal');
-    const cameraVideo = document.getElementById('camera-video');
-    const cameraCaptureBtn = document.getElementById('camera-capture-btn');
-    const cameraCloseBtn = document.getElementById('camera-close-btn');
-    const cameraFlipBtn = document.getElementById('camera-flip-btn');
-
     // 1. Human Photo Upload (Album)
     bgUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -42,18 +34,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 1-1. Camera Functionality (Enhanced)
+    // Camera UI Elements
+    const cameraOpenBtn = document.getElementById('camera-open-btn');
+    const cameraTopBtn = document.getElementById('camera-top-btn');
+    const cameraBottomBtn = document.getElementById('camera-bottom-btn');
+    const cameraModal = document.getElementById('camera-modal');
+    const cameraVideo = document.getElementById('camera-video');
+    const cameraCaptureBtn = document.getElementById('camera-capture-btn');
+    const cameraCloseBtn = document.getElementById('camera-close-btn');
+    const cameraFlipBtn = document.getElementById('camera-flip-btn');
+
+    // 1-1. Camera Functionality (Ultra Robust)
     let stream = null;
     let currentCameraTarget = 'human'; 
-    let currentFacingMode = 'user'; // 'user' (front) or 'environment' (back)
-
-    const openCamera = async (target) => {
-        currentCameraTarget = target;
-        // Default to front for human, back for garments
-        currentFacingMode = target === 'human' ? 'user' : 'environment';
-        await startStream();
-        cameraModal.style.display = 'flex';
-    };
+    let currentFacingMode = 'user'; 
 
     const startStream = async () => {
         if (stream) stream.getTracks().forEach(track => track.stop());
@@ -62,27 +56,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
             cameraVideo.srcObject = stream;
-            // Mirror only for front camera
-            cameraVideo.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+            cameraVideo.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
         } catch (err) {
             alert('카메라 시작 실패: ' + err.message);
         }
     };
 
-    cameraFlipBtn.addEventListener('click', async () => {
-        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    const openCamera = async (target) => {
+        currentCameraTarget = target;
+        currentFacingMode = (target === 'human') ? 'user' : 'environment';
+        cameraModal.style.display = 'flex';
         await startStream();
-    });
+    };
 
-    cameraOpenBtn.addEventListener('click', () => openCamera('human'));
-    
-    // Explicitly select all triggers including those in Step 2 & 3
-    document.querySelectorAll('.camera-trigger').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            openCamera(btn.dataset.target);
+    if (cameraOpenBtn) cameraOpenBtn.addEventListener('click', () => openCamera('human'));
+    if (cameraTopBtn) cameraTopBtn.addEventListener('click', () => openCamera('top'));
+    if (cameraBottomBtn) cameraBottomBtn.addEventListener('click', () => openCamera('bottom'));
+
+    if (cameraFlipBtn) {
+        cameraFlipBtn.addEventListener('click', async () => {
+            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+            await startStream();
         });
-    });
+    }
 
     const closeCamera = () => {
         if (stream) stream.getTracks().forEach(track => track.stop());
