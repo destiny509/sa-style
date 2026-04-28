@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sa-style-v1';
+const CACHE_NAME = 'sa-style-v2';
 const ASSETS = [
   './',
   './index.html',

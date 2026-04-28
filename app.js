@@ -1,11 +1,12 @@
 import { client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.js";
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("SA-STYLE v2 Loaded");
+
     // UI Elements
     const bgUpload = document.getElementById('bg-upload');
     const topUpload = document.getElementById('top-upload');
     const bottomUpload = document.getElementById('bottom-upload');
-    
     const userPhotoDisplay = document.getElementById('user-photo-display');
     const emptyMsg = document.getElementById('empty-msg');
     const aiTryOnBtn = document.getElementById('ai-tryon-btn');
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const bottomPreviewBox = document.getElementById('bottom-preview-box');
     const bottomPreviewImg = document.getElementById('bottom-preview-img');
 
-    // Camera UI Elements
+    // Camera Elements
     const cameraOpenBtn = document.getElementById('camera-open-btn');
     const cameraTopBtn = document.getElementById('camera-top-btn');
     const cameraBottomBtn = document.getElementById('camera-bottom-btn');
@@ -28,26 +29,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraCloseBtn = document.getElementById('camera-close-btn');
     const cameraFlipBtn = document.getElementById('camera-flip-btn');
 
-    // Data Store
     let humanData = null; 
     let topData = null; 
     let bottomData = null;
 
-    // 1. Human Photo Upload (Album)
-    bgUpload.addEventListener('change', (e) => {
+    // Utility: Show Toast Message
+    const showToast = (msg) => {
+        const toast = document.createElement('div');
+        toast.innerText = msg;
+        toast.style = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:black; color:white; padding:10px 20px; border-radius:20px; z-index:10001; font-size:14px;";
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    };
+
+    // Utility: Convert File/Blob to Base64 (Data URL) for reliable display
+    const toBase64 = (blob) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+
+    // 1. Human Photo Upload
+    bgUpload.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
             humanData = file;
-            const url = URL.createObjectURL(file);
-            userPhotoDisplay.src = url;
-            userPhotoDisplay.onload = () => {
-                userPhotoDisplay.style.display = 'block';
-                emptyMsg.style.display = 'none';
-            };
+            const base64 = await toBase64(file);
+            userPhotoDisplay.src = base64;
+            userPhotoDisplay.style.display = 'block';
+            emptyMsg.style.display = 'none';
+            showToast("인물 사진이 등록되었습니다.");
         }
     });
 
-    // 1-1. Camera Functionality
+    // Camera Logic
     let stream = null;
     let currentCameraTarget = 'human'; 
     let currentFacingMode = 'user'; 
@@ -56,10 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stream) stream.getTracks().forEach(track => track.stop());
         try {
             stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
+                video: { facingMode: currentFacingMode } 
             });
             cameraVideo.srcObject = stream;
-            cameraVideo.onloadedmetadata = () => cameraVideo.play();
+            cameraVideo.play();
             cameraVideo.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
         } catch (err) {
             alert('카메라 시작 실패: ' + err.message);
@@ -94,19 +110,19 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = cameraVideo.videoWidth;
         canvas.height = cameraVideo.videoHeight;
         const ctx = canvas.getContext('2d');
-        
         if (currentFacingMode === 'user') {
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
         }
         ctx.drawImage(cameraVideo, 0, 0);
         
-        canvas.toBlob((blob) => {
+        canvas.toBlob(async (blob) => {
             if (currentCameraTarget === 'human') {
                 humanData = blob;
-                userPhotoDisplay.src = URL.createObjectURL(blob);
+                userPhotoDisplay.src = await toBase64(blob);
                 userPhotoDisplay.style.display = 'block';
                 emptyMsg.style.display = 'none';
+                showToast("사진이 촬영되었습니다.");
             } else {
                 addGarmentToGrid(blob, currentCameraTarget);
             }
@@ -114,29 +130,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 'image/jpeg', 0.9);
     });
 
-    // 2. Garment Selection & List Management
-    const selectGarment = (srcOrFile, category) => {
+    // 2. Garment Management
+    const selectGarment = async (srcOrFile, category) => {
         selectionPreview.style.display = 'block';
-        const url = (typeof srcOrFile === 'string') ? srcOrFile : URL.createObjectURL(srcOrFile);
+        const displaySrc = (typeof srcOrFile === 'string') ? srcOrFile : await toBase64(srcOrFile);
         
         if (category === 'top') {
             topData = srcOrFile;
-            topPreviewImg.src = url;
+            topPreviewImg.src = displaySrc;
             topPreviewBox.style.display = 'block';
         } else {
             bottomData = srcOrFile;
-            bottomPreviewImg.src = url;
+            bottomPreviewImg.src = displaySrc;
             bottomPreviewBox.style.display = 'block';
         }
     };
 
-    const addGarmentToGrid = (srcOrFile, category) => {
+    const addGarmentToGrid = async (srcOrFile, category) => {
         const grid = document.getElementById(`${category}-grid`);
-        const url = (typeof srcOrFile === 'string') ? srcOrFile : URL.createObjectURL(srcOrFile);
+        const displaySrc = (typeof srcOrFile === 'string') ? srcOrFile : await toBase64(srcOrFile);
         
         const newCard = document.createElement('div');
         newCard.className = 'item-card';
-        newCard.innerHTML = `<img src="${url}" alt="Custom Item">`;
+        newCard.innerHTML = `<img src="${displaySrc}">`;
         newCard.style.border = '2px solid transparent';
         
         newCard.addEventListener('click', () => {
@@ -146,16 +162,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         grid.appendChild(newCard);
+        showToast(category === 'top' ? "상의가 추가되었습니다." : "하의가 추가되었습니다.");
         newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
 
+    // Initial item click setup
     document.querySelectorAll('.item-card').forEach(card => {
         card.addEventListener('click', () => {
-            const category = card.dataset.category;
+            const cat = card.dataset.category;
             const img = card.dataset.img;
-            selectGarment(img, category);
-            const grid = card.parentElement;
-            grid.querySelectorAll('.item-card').forEach(c => c.style.borderColor = 'transparent');
+            selectGarment(img, cat);
+            card.parentElement.querySelectorAll('.item-card').forEach(c => c.style.borderColor = 'transparent');
             card.style.borderColor = 'var(--accent)';
         });
     });
@@ -170,46 +187,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (file) addGarmentToGrid(file, 'bottom');
     });
 
-    // 3. Sequential AI Try-On Logic
+    // 3. AI Magic
     aiTryOnBtn.addEventListener('click', async () => {
         if (!humanData || (!topData && !bottomData)) {
             alert('사진과 의상을 모두 선택해 주세요!');
             return;
         }
-
         aiLoader.style.display = 'flex';
-        const loaderText = aiLoader.querySelector('p');
-        
         try {
             const app = await client("yisol/IDM-VTON");
             let currentImage = humanData;
 
             if (topData) {
-                loaderText.innerHTML = "상의 피팅 중...";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
                     handle_file(topData),
-                    "High quality top garment", true, false, 30, 42
+                    "High quality garment", true, false, 30, 42
                 ]);
-                if (res.data && res.data[0].url) {
-                    currentImage = res.data[0].url;
-                    userPhotoDisplay.src = currentImage;
-                }
+                if (res.data && res.data[0].url) currentImage = res.data[0].url;
             }
 
             if (bottomData) {
-                loaderText.innerHTML = "하의 피팅 중...";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
                     handle_file(bottomData),
-                    "High quality bottom garment", true, false, 30, 42
+                    "High quality garment", true, false, 30, 42
                 ]);
-                if (res.data && res.data[0].url) {
-                    userPhotoDisplay.src = res.data[0].url;
-                }
+                if (res.data && res.data[0].url) currentImage = res.data[0].url;
             }
+
+            userPhotoDisplay.src = currentImage;
+            showToast("피팅이 완료되었습니다!");
         } catch (err) {
-            alert('AI 피팅 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+            alert('AI 오류: ' + err.message);
         } finally {
             aiLoader.style.display = 'none';
         }
@@ -219,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js?v=2');
         });
     }
 });
