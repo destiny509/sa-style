@@ -1,0 +1,17 @@
+{
+  "name": "SA-Style AI Stylist",
+  "short_name": "SA-Style",
+  "description": "AI Virtual Try-On for Fashion",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#a855f7",
+  "icons": [
+    {
+      "src": "pwa_app_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
