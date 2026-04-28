@@ -18,22 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const bottomPreviewBox = document.getElementById('bottom-preview-box');
     const bottomPreviewImg = document.getElementById('bottom-preview-img');
 
-    // Data Store
-    let humanData = null; 
-    let topData = null; 
-    let bottomData = null;
-
-    // 1. Human Photo Upload (Album)
-    bgUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            humanData = file;
-            userPhotoDisplay.src = URL.createObjectURL(file);
-            userPhotoDisplay.style.display = 'block';
-            emptyMsg.style.display = 'none';
-        }
-    });
-
     // Camera UI Elements
     const cameraOpenBtn = document.getElementById('camera-open-btn');
     const cameraTopBtn = document.getElementById('camera-top-btn');
@@ -44,7 +28,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const cameraCloseBtn = document.getElementById('camera-close-btn');
     const cameraFlipBtn = document.getElementById('camera-flip-btn');
 
-    // 1-1. Camera Functionality (Ultra Robust)
+    // Data Store
+    let humanData = null; 
+    let topData = null; 
+    let bottomData = null;
+
+    // 1. Human Photo Upload (Album)
+    bgUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            humanData = file;
+            const url = URL.createObjectURL(file);
+            userPhotoDisplay.src = url;
+            userPhotoDisplay.onload = () => {
+                userPhotoDisplay.style.display = 'block';
+                emptyMsg.style.display = 'none';
+            };
+        }
+    });
+
+    // 1-1. Camera Functionality
     let stream = null;
     let currentCameraTarget = 'human'; 
     let currentFacingMode = 'user'; 
@@ -56,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } } 
             });
             cameraVideo.srcObject = stream;
+            cameraVideo.onloadedmetadata = () => cameraVideo.play();
             cameraVideo.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
         } catch (err) {
             alert('카메라 시작 실패: ' + err.message);
@@ -69,16 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
         await startStream();
     };
 
-    if (cameraOpenBtn) cameraOpenBtn.addEventListener('click', () => openCamera('human'));
+    cameraOpenBtn.addEventListener('click', () => openCamera('human'));
     if (cameraTopBtn) cameraTopBtn.addEventListener('click', () => openCamera('top'));
     if (cameraBottomBtn) cameraBottomBtn.addEventListener('click', () => openCamera('bottom'));
 
-    if (cameraFlipBtn) {
-        cameraFlipBtn.addEventListener('click', async () => {
-            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
-            await startStream();
-        });
-    }
+    cameraFlipBtn.addEventListener('click', async () => {
+        currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+        await startStream();
+    });
 
     const closeCamera = () => {
         if (stream) stream.getTracks().forEach(track => track.stop());
@@ -93,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.height = cameraVideo.videoHeight;
         const ctx = canvas.getContext('2d');
         
-        // Mirror the captured image if using front camera
         if (currentFacingMode === 'user') {
             ctx.translate(canvas.width, 0);
             ctx.scale(-1, 1);
@@ -107,46 +108,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 userPhotoDisplay.style.display = 'block';
                 emptyMsg.style.display = 'none';
             } else {
-                selectGarment(blob, currentCameraTarget);
+                addGarmentToGrid(blob, currentCameraTarget);
             }
             closeCamera();
         }, 'image/jpeg', 0.9);
     });
 
-    // 2. Garment Selection Handlers
+    // 2. Garment Selection & List Management
     const selectGarment = (srcOrFile, category) => {
         selectionPreview.style.display = 'block';
+        const url = (typeof srcOrFile === 'string') ? srcOrFile : URL.createObjectURL(srcOrFile);
+        
         if (category === 'top') {
             topData = srcOrFile;
-            topPreviewImg.src = (typeof srcOrFile === 'string') ? srcOrFile : URL.createObjectURL(srcOrFile);
+            topPreviewImg.src = url;
             topPreviewBox.style.display = 'block';
         } else {
             bottomData = srcOrFile;
-            bottomPreviewImg.src = (typeof srcOrFile === 'string') ? srcOrFile : URL.createObjectURL(srcOrFile);
+            bottomPreviewImg.src = url;
             bottomPreviewBox.style.display = 'block';
         }
     };
 
+    const addGarmentToGrid = (srcOrFile, category) => {
+        const grid = document.getElementById(`${category}-grid`);
+        const url = (typeof srcOrFile === 'string') ? srcOrFile : URL.createObjectURL(srcOrFile);
+        
+        const newCard = document.createElement('div');
+        newCard.className = 'item-card';
+        newCard.innerHTML = `<img src="${url}" alt="Custom Item">`;
+        newCard.style.border = '2px solid transparent';
+        
+        newCard.addEventListener('click', () => {
+            selectGarment(srcOrFile, category);
+            grid.querySelectorAll('.item-card').forEach(c => c.style.borderColor = 'transparent');
+            newCard.style.borderColor = 'var(--accent)';
+        });
+        
+        grid.appendChild(newCard);
+        newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
     document.querySelectorAll('.item-card').forEach(card => {
         card.addEventListener('click', () => {
-            selectGarment(card.dataset.img, card.dataset.category);
+            const category = card.dataset.category;
+            const img = card.dataset.img;
+            selectGarment(img, category);
+            const grid = card.parentElement;
+            grid.querySelectorAll('.item-card').forEach(c => c.style.borderColor = 'transparent');
+            card.style.borderColor = 'var(--accent)';
         });
     });
 
     topUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) selectGarment(file, 'top');
+        if (file) addGarmentToGrid(file, 'top');
     });
 
     bottomUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) selectGarment(file, 'bottom');
+        if (file) addGarmentToGrid(file, 'bottom');
     });
 
     // 3. Sequential AI Try-On Logic
     aiTryOnBtn.addEventListener('click', async () => {
         if (!humanData || (!topData && !bottomData)) {
-            alert('사진과 의상(상의 혹은 하의)을 준비해 주세요!');
+            alert('사진과 의상을 모두 선택해 주세요!');
             return;
         }
 
@@ -157,62 +184,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const app = await client("yisol/IDM-VTON");
             let currentImage = humanData;
 
-            // Step 1: Fit Top
             if (topData) {
-                loaderText.innerHTML = "상의(Top) 피팅 중...<br><span style='font-size:0.8rem;'>첫 번째 레이어를 생성하고 있습니다.</span>";
+                loaderText.innerHTML = "상의 피팅 중...";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
                     handle_file(topData),
-                    "High quality top garment try-on",
-                    true, false, 30, 42
+                    "High quality top garment", true, false, 30, 42
                 ]);
-                
-                if (res.data && res.data[0] && res.data[0].url) {
-                    currentImage = res.data[0].url; // Use URL as next input
-                    userPhotoDisplay.src = currentImage; // Preview intermediate result
-                } else {
-                    throw new Error("상의 피팅 중 오류가 발생했습니다.");
+                if (res.data && res.data[0].url) {
+                    currentImage = res.data[0].url;
+                    userPhotoDisplay.src = currentImage;
                 }
             }
 
-            // Step 2: Fit Bottom
             if (bottomData) {
-                loaderText.innerHTML = "하의(Bottom) 피팅 중...<br><span style='font-size:0.8rem;'>두 번째 레이어를 생성하고 있습니다.</span>";
+                loaderText.innerHTML = "하의 피팅 중...";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
                     handle_file(bottomData),
-                    "High quality bottom garment try-on",
-                    true, false, 30, 42
+                    "High quality bottom garment", true, false, 30, 42
                 ]);
-                
-                if (res.data && res.data[0] && res.data[0].url) {
+                if (res.data && res.data[0].url) {
                     userPhotoDisplay.src = res.data[0].url;
-                } else {
-                    throw new Error("하의 피팅 중 오류가 발생했습니다.");
                 }
             }
-
-            alert('모든 의상 피팅이 완료되었습니다!');
-            
         } catch (err) {
-            console.error(err);
-            alert(`[AI 피팅 실패] ${err.message}\n\n잠시 후 다시 시도해 주세요.`);
+            alert('AI 피팅 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
         } finally {
             aiLoader.style.display = 'none';
-            loaderText.innerHTML = "진짜 입은 것처럼 새롭게 이미지를 그리고 있습니다.<br><span style='font-size: 0.8rem;'>(최대 1~2분 정도 소요될 수 있습니다)</span>";
         }
     });
 
     resetBtn.addEventListener('click', () => location.reload());
 
-    // PWA Service Worker Registration
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').then(reg => {
-                console.log('Service Worker Registered');
-            }).catch(err => {
-                console.log('Service Worker Registration Failed', err);
-            });
+            navigator.serviceWorker.register('sw.js');
         });
     }
 });
