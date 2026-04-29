@@ -291,6 +291,14 @@ input[type="range"] {
         flex-direction: column;
         overflow-y: auto;
         height: auto;
+        display: flex; /* Ensure flex is active */
+    }
+
+    .main-content {
+        order: -1; /* Move Result Area to TOP on mobile */
+        padding: 0;
+        height: 60vh; /* Adjust height for better visibility */
+        background: #f8f8f8;
     }
 
     .sidebar {
@@ -300,15 +308,7 @@ input[type="range"] {
         border-right: none;
         border-bottom: 1px solid var(--glass-border);
         position: static;
-    }
-
-    .scroll-area {
-        overflow-y: visible;
-    }
-
-    .main-content {
-        padding: 0; /* Remove all padding to maximize image area */
-        height: 80vh; /* Maximize vertical space for result */
+        background: white;
     }
 
     .canvas-container {

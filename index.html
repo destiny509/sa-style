@@ -9,9 +9,7 @@
     <meta name="theme-color" content="#a855f7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         #ai-loader {
@@ -39,7 +37,18 @@
         </p>
     </div>
 
-    <!-- Sidebar -->
+    <!-- [NEW] Result Area at Top for better Mobile UX -->
+    <main class="main-content">
+        <div class="canvas-container" id="canvas-container">
+            <img id="user-photo-display" style="display: none; width: 100%; height: 100%; object-fit: contain; z-index: 10; position: relative;">
+            <div class="empty-state" id="empty-msg" style="position: absolute; z-index: 1; text-align: center;">
+                <i data-lucide="camera" size="48" style="opacity: 0.2; margin-bottom: 1rem;"></i>
+                <p style="font-weight: 500; color: var(--text-secondary);">Upload your photo to start</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sidebar / Options -->
     <aside class="sidebar">
         <div class="logo">SA-STYLE</div>
         
@@ -60,11 +69,11 @@
             <section>
                 <h3 class="section-title">Step 2. Select Top (상의)</h3>
                 <div class="item-grid" id="top-grid">
-                    <div class="item-card" data-category="top" data-img="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=200">
-                        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=200" alt="White T-shirt">
+                    <div class="item-card" data-category="top" data-img="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=200">
+                        <img src="https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=200" alt="White Tee">
                     </div>
-                    <div class="item-card" data-category="top" data-img="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=200">
-                        <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&q=80&w=200" alt="Denim Jacket">
+                    <div class="item-card" data-category="top" data-img="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=200">
+                        <img src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=200" alt="Black Tee">
                     </div>
                 </div>
                 <div class="upload-group" style="display: flex; gap: 0.5rem; margin-bottom: 2rem;">
@@ -98,18 +107,19 @@
                 </div>
                 <input type="file" id="bottom-upload" accept="image/*" hidden>
             </section>
-            
-            <section id="selection-preview" style="display: none; margin-top: 2rem; background: #f9f9f9; padding: 1.5rem; border-radius: var(--radius-md);">
-                <h3 class="section-title">Selected Outfit</h3>
-                <div style="display: flex; gap: 1rem; justify-content: center;">
-                    <div id="top-preview-box" style="display: none; width: 80px; height: 100px; border: 2px solid var(--accent); border-radius: 8px; overflow: hidden;">
-                        <img id="top-preview-img" src="" style="width: 100%; height: 100%; object-fit: contain;">
+
+            <!-- Selected Summary -->
+            <div id="selection-preview" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.03); border-radius: 15px;">
+                <h4 style="margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary);">Selected Outfit</h4>
+                <div style="display: flex; gap: 1rem;">
+                    <div id="top-preview-box" style="display: none; width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid var(--accent);">
+                        <img id="top-preview-img" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
-                    <div id="bottom-preview-box" style="display: none; width: 80px; height: 100px; border: 2px solid var(--accent); border-radius: 8px; overflow: hidden;">
-                        <img id="bottom-preview-img" src="" style="width: 100%; height: 100%; object-fit: contain;">
+                    <div id="bottom-preview-box" style="display: none; width: 60px; height: 60px; border-radius: 10px; overflow: hidden; border: 2px solid var(--accent);">
+                        <img id="bottom-preview-img" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
 
         <!-- Footer Actions -->
@@ -122,21 +132,6 @@
             </button>
         </div>
     </aside>
-
-    <!-- Main Workspace -->
-    <main class="main-content">
-        <!-- Canvas Area -->
-        <div class="canvas-container" id="canvas-container">
-            <!-- User Photo Display (Z-index 10 to be on top) -->
-            <img id="user-photo-display" style="display: none; width: 100%; height: 100%; object-fit: contain; z-index: 10; position: relative;">
-            
-            <!-- Empty Msg (Z-index 1) -->
-            <div class="empty-state" id="empty-msg" style="position: absolute; z-index: 1; text-align: center;">
-                <i data-lucide="camera" size="48" style="opacity: 0.2; margin-bottom: 1rem;"></i>
-                <p style="font-weight: 500; color: var(--text-secondary);">Upload your photo to start</p>
-            </div>
-        </div>
-    </main>
 
     <!-- Camera Modal -->
     <div id="camera-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center;">
@@ -154,7 +149,7 @@
         </div>
     </div>
 
-    <script type="module" src="app.js?v=2"></script>
+    <script type="module" src="app.js"></script>
     <script>
         lucide.createIcons();
     </script>
