@@ -122,6 +122,16 @@
             </div>
         </div>
 
+        <!-- Prompt Input Area -->
+        <div style="margin-top: 2rem; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">
+                <i data-lucide="wand-2" size="14"></i> Style Prompt (AI 지시어)
+            </div>
+            <textarea id="ai-prompt" placeholder="예: '빨간색으로 바꿔줘', '밝은 분위기로 합성해줘'" 
+                style="width: 100%; height: 80px; padding: 1rem; border-radius: 12px; border: 1px solid #E5E5E5; background: #F9FAFB; font-family: inherit; font-size: 0.9rem; resize: none; outline: none; transition: border-color 0.2s;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='#E5E5E5'"></textarea>
+        </div>
+
         <!-- Footer Actions -->
         <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.8rem;">
             <button class="btn-upload" id="ai-tryon-btn" style="background: var(--accent); letter-spacing: 0.5px;">

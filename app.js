@@ -167,31 +167,43 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('사진과 의상을 모두 선택해 주세요!');
             return;
         }
+
+        const userPrompt = document.getElementById('ai-prompt').value || "High quality garment";
         aiLoader.style.display = 'flex';
+        const loaderText = aiLoader.querySelector('p');
+        
         try {
             const app = await client("yisol/IDM-VTON");
             let currentImage = humanData;
+
             if (topData) {
+                loaderText.innerText = "상의 피팅 중... (지시어 반영 중)";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
-                    handle_file(topData), "High quality garment", true, false, 30, 42
+                    handle_file(topData), 
+                    userPrompt, // 사용자 프롬프트 반영
+                    true, false, 30, 42
                 ]);
                 if (res.data && res.data[0].url) {
                     currentImage = res.data[0].url;
                     userPhotoDisplay.src = currentImage;
                 }
             }
+
             if (bottomData) {
+                loaderText.innerText = "하의 피팅 중... (지시어 반영 중)";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
-                    handle_file(bottomData), "High quality garment", true, false, 30, 42
+                    handle_file(bottomData), 
+                    userPrompt, // 사용자 프롬프트 반영
+                    true, false, 30, 42
                 ]);
                 if (res.data && res.data[0].url) {
                     userPhotoDisplay.src = res.data[0].url;
                 }
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            showToast("피팅이 완료되었습니다!");
+            showToast("AI 지시어가 반영된 피팅이 완료되었습니다!");
         } catch (err) {
             alert('AI 오류: ' + err.message);
         } finally {
