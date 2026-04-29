@@ -1,6 +1,8 @@
 import { client, handle_file } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.js";
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("SA-STYLE v3+ Loaded");
+
     // UI Elements
     const bgUpload = document.getElementById('bg-upload');
     const topUpload = document.getElementById('top-upload');
@@ -39,19 +41,36 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => toast.remove(), 2500);
     };
 
-    // 1. Step 1: Human Photo
-    const updateHumanPhoto = (fileOrBlob) => {
-        humanData = fileOrBlob;
-        const url = URL.createObjectURL(fileOrBlob);
+    // Helper: Display image reliably
+    const displayImage = async (blobOrFile) => {
+        if (!blobOrFile) return;
+        const url = URL.createObjectURL(blobOrFile);
+        
+        // Show loading state in message if needed
+        if (emptyMsg) emptyMsg.innerHTML = '<p style="color:white;">Loading Image...</p>';
+
         userPhotoDisplay.src = url;
         userPhotoDisplay.style.display = 'block';
-        if (emptyMsg) emptyMsg.style.display = 'none';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        userPhotoDisplay.style.opacity = '1';
+        userPhotoDisplay.style.visibility = 'visible';
+        
+        userPhotoDisplay.onload = () => {
+            if (emptyMsg) emptyMsg.style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // Extra safety: Force draw after 100ms
+        setTimeout(() => {
+            if (emptyMsg) emptyMsg.style.display = 'none';
+            userPhotoDisplay.style.display = 'block';
+        }, 100);
     };
 
+    // 1. Step 1: Human Photo
     bgUpload.addEventListener('change', (e) => {
         if (e.target.files[0]) {
-            updateHumanPhoto(e.target.files[0]);
+            humanData = e.target.files[0];
+            displayImage(humanData);
             showToast("인물 사진이 등록되었습니다.");
         }
     });
@@ -67,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
             cameraVideo.srcObject = stream;
             cameraVideo.play();
-            cameraVideo.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'scaleX(1)';
         } catch (err) {
             alert('카메라 접근 실패: ' + err.message);
         }
@@ -107,7 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.drawImage(cameraVideo, 0, 0);
         canvas.toBlob((blob) => {
             if (currentCameraTarget === 'human') {
-                updateHumanPhoto(blob);
+                humanData = blob;
+                displayImage(blob);
                 showToast("사진이 촬영되었습니다.");
             } else {
                 addGarmentToGrid(blob, currentCameraTarget);
@@ -120,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Step 2 & 3: Selection
     const selectGarment = (srcOrFile, category) => {
-        selectionPreview.style.display = 'block';
+        if (selectionPreview) selectionPreview.style.display = 'block';
         const url = (typeof srcOrFile === 'string') ? srcOrFile : URL.createObjectURL(srcOrFile);
         if (category === 'top') {
             topData = srcOrFile;
@@ -145,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
             newCard.style.borderColor = 'var(--accent)';
         });
         grid.appendChild(newCard);
-        newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
 
     document.querySelectorAll('.item-card').forEach(card => {
@@ -167,43 +185,32 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('사진과 의상을 모두 선택해 주세요!');
             return;
         }
-
         const userPrompt = document.getElementById('ai-prompt').value || "High quality garment";
         aiLoader.style.display = 'flex';
-        const loaderText = aiLoader.querySelector('p');
-        
         try {
             const app = await client("yisol/IDM-VTON");
             let currentImage = humanData;
-
             if (topData) {
-                loaderText.innerText = "상의 피팅 중... (지시어 반영 중)";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
-                    handle_file(topData), 
-                    userPrompt, // 사용자 프롬프트 반영
-                    true, false, 30, 42
+                    handle_file(topData), userPrompt, true, false, 30, 42
                 ]);
                 if (res.data && res.data[0].url) {
                     currentImage = res.data[0].url;
                     userPhotoDisplay.src = currentImage;
                 }
             }
-
             if (bottomData) {
-                loaderText.innerText = "하의 피팅 중... (지시어 반영 중)";
                 const res = await app.predict("/tryon", [
                     {"background": handle_file(currentImage), "layers": [], "composite": null},
-                    handle_file(bottomData), 
-                    userPrompt, // 사용자 프롬프트 반영
-                    true, false, 30, 42
+                    handle_file(bottomData), userPrompt, true, false, 30, 42
                 ]);
                 if (res.data && res.data[0].url) {
                     userPhotoDisplay.src = res.data[0].url;
                 }
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            showToast("AI 지시어가 반영된 피팅이 완료되었습니다!");
+            showToast("피팅 완료!");
         } catch (err) {
             alert('AI 오류: ' + err.message);
         } finally {
