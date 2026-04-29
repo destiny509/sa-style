@@ -13,6 +13,12 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3534/3534312.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Buffer 에러 방지용 폴리필
+        if (typeof window !== 'undefined' && typeof window.Buffer === 'undefined') {
+            window.Buffer = { isBuffer: () => false };
+        }
+    </script>
     <style>
         #ai-loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
